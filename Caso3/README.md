@@ -3,6 +3,7 @@
 
  pip install kafka-python
  pip install flask kafka-python redis
+ pip install flask    
  python -m venv .venv
 
  docker-compose up -d    
