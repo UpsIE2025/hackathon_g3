@@ -34,79 +34,21 @@ Asegurar balanceo de carga si hay múltiples consumidores.
 Manejar reintentos y reenvío en caso de fallos en el consumidor.
 Exponer una API REST para enviar mensajes desde Postman.
 Implementación Técnica
-1️⃣ Instalar dependencias
-
+---------------------------------------
+#comandos ejucion
 pip install kafka-python flask
-
-2️⃣ Crear un Productor con API REST para enviar mensajes
-Crea el archivo producer_api.py:
-
-from flask import Flask, request, jsonify
-from kafka import KafkaProducer
-import json
-
-app = Flask(__name__)
-
-producer = KafkaProducer(
-    bootstrap_servers='localhost:9092',
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
-)
-
-@app.route('/enviar', methods=['POST'])
-def enviar_mensaje():
-    data = request.json
-    producer.send('mi-topico', data)
-    producer.flush()
-    return jsonify({"mensaje": "Mensaje enviado", "data": data}), 200
-
-if __name__ == '__main__':
-    app.run(port=5000, debug=True)
-➡ Cómo probarlo en Postman:
-
+python -m venv venv 
+.\venv\Scripts\Activate
+python -m pip install --upgrade pip setuptools wheel
+pip install kafka-python redis
+pip install Flask kafka-python redis
+---------------------------------------
+#Postman:
 Método: POST
 URL: http://localhost:5000/enviar
 Body (JSON):
-json
-Copiar
-Editar
 {
   "id": 1,
   "contenido": "Hola desde Kafka"
 }
-3️⃣ Crear un Consumidor que procese los mensajes
-Crea el archivo consumer.py:
-
-python
-Copiar
-Editar
-from kafka import KafkaConsumer
-import json
-
-consumer = KafkaConsumer(
-    'mi-topico',
-    bootstrap_servers='localhost:9092',
-    value_deserializer=lambda m: json.loads(m.decode('utf-8')),
-    group_id="grupo-consumidores"
-)
-
-print("Esperando mensajes...")
-
-for message in consumer:
-    print(f"Mensaje recibido: {message.value}")
-4️⃣ Iniciar Kafka y probar
-
-------------------------------------------------------------
-1️⃣ Inicia Kafka (Si no lo tienes, instálalo y configúralo).
-
-
-zookeeper-server-start.sh config/zookeeper.properties
-kafka-server-start.sh config/server.properties
-2️⃣ Crea un tópico en Kafka
-
-
-kafka-topics.sh --create --topic mi-topico --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
-3️⃣ Ejecuta el consumidor primero
-
-
-python consumer.py
-4️⃣ Envía un mensaje desde Postman y verifica que solo un consumidor lo reciba.
+---------------------------------------
