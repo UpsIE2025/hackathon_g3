@@ -1,44 +1,30 @@
+import redis
 from flask import Flask, request, jsonify
 from kafka import KafkaProducer
-import json
-import random
 
 app = Flask(__name__)
 
-producer = KafkaProducer(
-    bootstrap_servers='localhost:9092',
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
-)
+# Configuración de Kafka y Redis
+producer = KafkaProducer(bootstrap_servers='localhost:9092', acks='all')
+redis_client = redis.StrictRedis(host='localhost', port=6379, decode_responses=True)
 
-TOPICS = {
-    "orders": "orders_channel",
-    "dead_letter": "dead_letter_channel"
-}
-
-@app.route('/enviar', methods=['POST'])
-def enviar_mensaje():
+@app.route('/send', methods=['POST'])
+def send_message():
     data = request.json
-    topic = TOPICS["orders"]
+    message = data.get('message', '')
 
-    try:
-        # Simular fallo aleatorio para pruebas
-        if random.random() < 0.2:  
-            raise Exception("Error simulado en entrega")
+    if not message:
+        return jsonify({'error': 'Message cannot be empty'}), 400
 
-        producer.send(topic, data)
-        producer.flush()
-        return jsonify({"mensaje": "Mensaje enviado", "data": data}), 200
+    # Guardar mensaje en Redis antes de enviarlo a Kafka
+    message_id = f"msg:{redis_client.incr('msg_id')}"
+    redis_client.set(message_id, message)
 
-    except Exception as e:
-        # Mover mensaje al Dead Letter Channel
-        dead_message = {
-            "original_message": data,
-            "error": str(e),
-            "failed_topic": topic
-        }
-        producer.send(TOPICS["dead_letter"], dead_message)
-        producer.flush()
-        return jsonify({"error": "Mensaje fallido, movido a Dead Letter Channel"}), 500
+    # Enviar mensaje a Kafka
+    producer.send('main-topic', message.encode('utf-8'))
+    producer.flush()
+
+    return jsonify({'status': 'Message stored in Redis and sent to Kafka'}), 200
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    app.run(debug=True, port=5000)
