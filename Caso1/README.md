@@ -76,9 +76,7 @@ Editar
 3️⃣ Crear un Consumidor que procese los mensajes
 Crea el archivo consumer.py:
 
-python
-Copiar
-Editar
+
 from kafka import KafkaConsumer
 import json
 
@@ -96,17 +94,3 @@ for message in consumer:
 4️⃣ Iniciar Kafka y probar
 
 ------------------------------------------------------------
-1️⃣ Inicia Kafka (Si no lo tienes, instálalo y configúralo).
-
-
-zookeeper-server-start.sh config/zookeeper.properties
-kafka-server-start.sh config/server.properties
-2️⃣ Crea un tópico en Kafka
-
-
-kafka-topics.sh --create --topic mi-topico --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
-3️⃣ Ejecuta el consumidor primero
-
-
-python consumer.py
-4️⃣ Envía un mensaje desde Postman y verifica que solo un consumidor lo reciba.
